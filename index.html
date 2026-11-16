@@ -270,36 +270,52 @@ setInterval(saveGame, 10000);
 
 // ── ui ───────────────────────────────────────────────────────────────────────
 
+// build subsidiary cards once
+function buildSubCards() {
+  const list = document.getElementById('subList');
+  list.innerHTML = '';
+  subsidiaries.forEach(sub => {
+    const card = document.createElement('div');
+    card.className = 'sub-card';
+    card.dataset.sub = sub.id;
+    card.innerHTML = `
+      <div class="icon">${sub.icon}</div>
+      <div class="info">
+        <div class="name">${sub.name}</div>
+        <div class="desc">${sub.desc}</div>
+        <div class="owned">owned: <span class="owned-count">0</span></div>
+      </div>
+      <button class="buy" onclick="buySub('${sub.id}')">
+        buy
+        <span class="cost">0 bread</span>
+      </button>
+    `;
+    list.appendChild(card);
+  });
+}
+
 function updateUI() {
   document.getElementById('bread').textContent = fmt(state.bread);
   document.getElementById('brains').textContent = fmt(state.brains);
   document.getElementById('bps').textContent = fmt(bps());
   document.getElementById('multiplier').textContent = 'x' + state.multiplier.toFixed(1);
 
-  // render subsidiaries
-  const list = document.getElementById('subList');
-  list.innerHTML = '';
+  // update subsidiary cards in place (don't rebuild DOM)
   subsidiaries.forEach(sub => {
+    const card = document.querySelector('.sub-card[data-sub="' + sub.id + '"]');
+    if (!card) return;
     const owned = state.subs[sub.id] || 0;
     const c = cost(sub);
-    const card = document.createElement('div');
-    card.className = 'sub-card';
-    card.innerHTML = `
-      <div class="icon">${sub.icon}</div>
-      <div class="info">
-        <div class="name">${sub.name}</div>
-        <div class="desc">${sub.desc}</div>
-        <div class="owned">owned: ${owned}</div>
-      </div>
-      <button class="buy" ${state.bread < c ? 'disabled' : ''} onclick="buySub('${sub.id}')">
-        buy
-        <span class="cost">${fmt(c)} bread</span>
-      </button>
-    `;
-    list.appendChild(card);
+    const ownedEl = card.querySelector('.owned-count');
+    if (ownedEl) ownedEl.textContent = owned;
+    const btn = card.querySelector('.buy');
+    if (btn) {
+      btn.disabled = state.bread < c;
+      const costEl = btn.querySelector('.cost');
+      if (costEl) costEl.textContent = fmt(c) + ' bread';
+    }
   });
 
-  // render achievements
   renderAchievements();
 }
 
@@ -325,6 +341,7 @@ function renderAchievements() {
 
 loadGame();
 document.getElementById('liquidateBtn').addEventListener('click', liquidate);
+buildSubCards();
 updateUI();
 renderAchievements();
 
