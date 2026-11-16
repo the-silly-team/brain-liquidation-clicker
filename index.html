@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>brain liquidation inc. — clicker</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1530;font-family:'Segoe UI',sans-serif;color:#e0ddf5;min-height:100vh;overflow-x:hidden;user-select:none}
+.wrap{max-width:900px;margin:0 auto;padding:20px}
+header{text-align:center;margin-bottom:20px}
+h1{font-family:'Comic Sans MS',cursive;font-size:36px;color:#ffd700;margin:0 0 4px;text-shadow:0 0 10px #ffd70088}
+.sub{color:#9a93b8;font-size:13px;margin:0}
+.stats{display:flex;justify-content:center;gap:24px;margin:16px 0;flex-wrap:wrap}
+.stat{background:#252040;border:2px solid #8b6cf0;border-radius:12px;padding:12px 20px;text-align:center;min-width:120px}
+.stat .val{font-size:24px;font-weight:900;color:#ffd700;display:block}
+.stat .lbl{font-size:11px;color:#9a93b8;margin-top:2px}
+.main-btn{display:block;margin:20px auto;width:200px;height:200px;border-radius:50%;border:4px solid #8b6cf0;background:linear-gradient(135deg,#2f2a45,#1a1530);color:#e0ddf5;font:900 18px 'Segoe UI';cursor:pointer;position:relative;overflow:hidden;transition:transform .05s;box-shadow:0 0 30px #8b6cf044}
+.main-btn:active{transform:scale(0.95)}
+.main-btn .emoji{font-size:64px;display:block;margin-bottom:4px}
+.main-btn .label{font-size:12px;color:#9a93b8}
+.subsidiaries{margin-top:24px}
+.subsidiaries h2{font-family:'Comic Sans MS',cursive;font-size:20px;color:#8b6cf0;margin:0 0 12px}
+.sub-card{background:#252040;border:2px solid #e8defd;border-radius:12px;padding:14px 18px;margin:0 0 10px;display:flex;align-items:center;gap:14px;transition:border-color .2s}
+.sub-card:hover{border-color:#8b6cf0}
+.sub-card .icon{font-size:32px;min-width:40px;text-align:center}
+.sub-card .info{flex:1}
+.sub-card .info .name{font-weight:700;font-size:14px;color:#e0ddf5}
+.sub-card .info .desc{font-size:11px;color:#9a93b8;margin-top:2px}
+.sub-card .info .owned{font-size:11px;color:#5fd4b0;margin-top:2px}
+.sub-card .buy{background:#8b6cf0;color:#fff;border:0;border-radius:10px;padding:8px 16px;cursor:pointer;font:700 12px 'Segoe UI';min-width:100px;text-align:center}
+.sub-card .buy:hover{background:#6f4fd0}
+.sub-card .buy:disabled{background:#555;cursor:default}
+.sub-card .buy .cost{font-size:10px;opacity:.8;display:block;margin-top:2px}
+.achievements{margin-top:24px}
+.achievements h2{font-family:'Comic Sans MS',cursive;font-size:20px;color:#8b6cf0;margin:0 0 12px}
+.ach{background:#252040;border:2px solid #e8defd;border-radius:10px;padding:10px 14px;margin:0 0 8px;display:flex;align-items:center;gap:10px;opacity:.4;transition:opacity .3s}
+.ach.unlocked{opacity:1;border-color:#ffd700}
+.ach .ach-icon{font-size:20px}
+.ach .ach-info .ach-name{font-weight:700;font-size:12px;color:#e0ddf5}
+.ach .ach-info .ach-desc{font-size:10px;color:#9a93b8}
+.floating{position:fixed;pointer-events:none;z-index:9999;font-size:20px;animation:floatUp 1.5s ease-out forwards}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-80px)}}
+.particles{position:fixed;inset:0;pointer-events:none;z-index:1}
+.save-bar{position:fixed;bottom:0;left:0;right:0;background:#252040;border-top:2px solid #8b6cf0;padding:8px 16px;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#9a93b8}
+.save-bar button{background:#8b6cf0;color:#fff;border:0;border-radius:8px;padding:4px 12px;cursor:pointer;font:700 11px 'Segoe UI'}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#252040;border:2px solid #ffd700;border-radius:12px;padding:12px 24px;color:#ffd700;font-weight:700;font-size:14px;z-index:99999;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🧠 brain liquidation inc.</h1>
+    <p class="sub">quarterly financial report — click to liquidate brains, earn bread, buy subsidiaries</p>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><span class="val" id="bread">0</span><span class="lbl">bread (currency)</span></div>
+    <div class="stat"><span class="val" id="brains">0</span><span class="lbl">brains liquidated</span></div>
+    <div class="stat"><span class="val" id="bps">0</span><span class="lbl">bread per second</span></div>
+    <div class="stat"><span class="val" id="multiplier">x1</span><span class="lbl">multiplier</span></div>
+  </div>
+
+  <button class="main-btn" id="liquidateBtn">
+    <span class="emoji">🧠</span>
+    <span class="label">liquidate brain</span>
+  </button>
+
+  <div class="subsidiaries">
+    <h2>subsidiaries</h2>
+    <div id="subList"></div>
+  </div>
+
+  <div class="achievements">
+    <h2>achievements</h2>
+    <div id="achList"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="save-bar">
+  <span id="saveStatus">auto-save enabled</span>
+  <div>
+    <button onclick="saveGame()">save</button>
+    <button onclick="resetGame()" style="background:#ff6b6b">reset</button>
+  </div>
+</div>
+
+<script>
+// ── game state ──────────────────────────────────────────────────────────────
+const SAVE_KEY = 'brain-liquidation-save';
+const state = {
+  bread: 0,
+  brains: 0,
+  multiplier: 1,
+  subs: {},
+  achievements: {},
+  lastSave: Date.now()
+};
+
+const subsidiaries = [
+  { id: 'nobro', name: 'nobro technologies', icon: '🏢', desc: 'auto-liquidates brains. +1 bread/sec each', baseCost: 10, costMult: 1.15, bps: 1 },
+  { id: 'potato', name: 'potato computing', icon: '🥔', desc: 'computes with potatoes. +2 bread/sec each', baseCost: 50, costMult: 1.2, bps: 2 },
+  { id: 'silly', name: 'silly systems', icon: '🧠', desc: 'software division. x1.5 multiplier each', baseCost: 200, costMult: 1.3, bps: 0, mult: 1.5 },
+  { id: 'neuron', name: 'neuron destruction llc', icon: '⚡', desc: 'destroys neurons passively. +5 bread/sec each', baseCost: 500, costMult: 1.25, bps: 5 },
+  { id: 'bread', name: 'the bread foundation', icon: '🍞', desc: 'the ultimate subsidiary. +20 bread/sec each', baseCost: 2000, costMult: 1.4, bps: 20 },
+];
+
+const achievements = [
+  { id: 'first', name: 'first liquidation', desc: 'liquidate your first brain', check: () => state.brains >= 1 },
+  { id: 'ten', name: 'ten brains', desc: 'liquidate 10 brains', check: () => state.brains >= 10 },
+  { id: 'hundred', name: 'century', desc: 'liquidate 100 brains', check: () => state.brains >= 100 },
+  { id: 'thousand', name: 'millennium', desc: 'liquidate 1000 brains', check: () => state.brains >= 1000 },
+  { id: 'bread100', name: 'bread winner', desc: 'earn 100 bread', check: () => state.bread >= 100 },
+  { id: 'bread10k', name: 'bread millionaire', desc: 'earn 10,000 bread', check: () => state.bread >= 10000 },
+  { id: 'nobro', name: 'nobro acquired', desc: 'buy your first nobro technologies', check: () => (state.subs.nobro || 0) >= 1 },
+  { id: 'breadco', name: 'the breadening', desc: 'buy the bread foundation', check: () => (state.subs.bread || 0) >= 1 },
+  { id: 'all', name: 'full portfolio', desc: 'own at least one of every subsidiary', check: () => subsidiaries.every(s => (state.subs[s.id] || 0) >= 1) },
+];
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+function fmt(n) {
+  if (n >= 1e9) return (n/1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+  return Math.floor(n).toString();
+}
+
+function cost(sub) {
+  const owned = state.subs[sub.id] || 0;
+  return Math.floor(sub.baseCost * Math.pow(sub.costMult, owned));
+}
+
+function bps() {
+  let total = 0;
+  subsidiaries.forEach(s => {
+    const owned = state.subs[s.id] || 0;
+    total += owned * (s.bps || 0);
+  });
+  return total * state.multiplier;
+}
+
+function mult() {
+  let m = 1;
+  subsidiaries.forEach(s => {
+    if (s.mult) {
+      const owned = state.subs[s.id] || 0;
+      m *= Math.pow(s.mult, owned);
+    }
+  });
+  return m;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function spawnFloat(text, x, y) {
+  const f = document.createElement('div');
+  f.className = 'floating';
+  f.textContent = text;
+  f.style.left = (x - 20) + 'px';
+  f.style.top = (y - 20) + 'px';
+  f.style.color = ['#ffd700','#ff8fb1','#5fd4b0','#8b6cf0','#ffc94d'][Math.floor(Math.random()*5)];
+  document.body.appendChild(f);
+  setTimeout(() => f.remove(), 1500);
+}
+
+// ── game logic ───────────────────────────────────────────────────────────────
+
+function liquidate(e) {
+  const gain = 1 * state.multiplier;
+  state.bread += gain;
+  state.brains++;
+  state.multiplier = mult();
+  spawnFloat('+' + fmt(gain), e.clientX, e.clientY);
+  // spawn emoji occasionally
+  if (Math.random() < 0.3) {
+    const emojis = ['🧠','💵','📈','🍞','🥔','🦎','💼'];
+    const f = document.createElement('div');
+    f.className = 'floating';
+    f.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    f.style.left = (e.clientX - 10) + 'px';
+    f.style.top = (e.clientY - 10) + 'px';
+    f.style.fontSize = '24px';
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), 1500);
+  }
+  updateUI();
+  checkAchievements();
+}
+
+function buySub(id) {
+  const sub = subsidiaries.find(s => s.id === id);
+  const c = cost(sub);
+  if (state.bread < c) {
+    showToast('not enough bread!');
+    return;
+  }
+  state.bread -= c;
+  state.subs[id] = (state.subs[id] || 0) + 1;
+  state.multiplier = mult();
+  showToast('acquired ' + sub.name + '!');
+  updateUI();
+  checkAchievements();
+}
+
+function checkAchievements() {
+  achievements.forEach(a => {
+    if (!state.achievements[a.id] && a.check()) {
+      state.achievements[a.id] = true;
+      showToast('🏆 ' + a.name);
+    }
+  });
+  renderAchievements();
+}
+
+// ── passive income ───────────────────────────────────────────────────────────
+
+let lastTick = Date.now();
+setInterval(() => {
+  const now = Date.now();
+  const dt = (now - lastTick) / 1000;
+  lastTick = now;
+  const income = bps() * dt;
+  state.bread += income;
+  updateUI();
+}, 100);
+
+// ── save/load ────────────────────────────────────────────────────────────────
+
+function saveGame() {
+  state.lastSave = Date.now();
+  localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+  showToast('game saved!');
+}
+
+function loadGame() {
+  try {
+    const saved = localStorage.getItem(SAVE_KEY);
+    if (saved) {
+      const data = JSON.parse(saved);
+      Object.assign(state, data);
+      // calculate offline earnings
+      const now = Date.now();
+      const elapsed = (now - (state.lastSave || now)) / 1000;
+      const earned = bps() * elapsed;
+      if (earned > 0 && elapsed > 5) {
+        state.bread += earned;
+        showToast('welcome back! earned ' + fmt(earned) + ' bread while away');
+      }
+    }
+  } catch (e) {}
+}
+
+function resetGame() {
+  if (!confirm('reset all progress?')) return;
+  localStorage.removeItem(SAVE_KEY);
+  location.reload();
+}
+
+// auto-save every 10s
+setInterval(saveGame, 10000);
+
+// ── ui ───────────────────────────────────────────────────────────────────────
+
+function updateUI() {
+  document.getElementById('bread').textContent = fmt(state.bread);
+  document.getElementById('brains').textContent = fmt(state.brains);
+  document.getElementById('bps').textContent = fmt(bps());
+  document.getElementById('multiplier').textContent = 'x' + state.multiplier.toFixed(1);
+
+  // render subsidiaries
+  const list = document.getElementById('subList');
+  list.innerHTML = '';
+  subsidiaries.forEach(sub => {
+    const owned = state.subs[sub.id] || 0;
+    const c = cost(sub);
+    const card = document.createElement('div');
+    card.className = 'sub-card';
+    card.innerHTML = `
+      <div class="icon">${sub.icon}</div>
+      <div class="info">
+        <div class="name">${sub.name}</div>
+        <div class="desc">${sub.desc}</div>
+        <div class="owned">owned: ${owned}</div>
+      </div>
+      <button class="buy" ${state.bread < c ? 'disabled' : ''} onclick="buySub('${sub.id}')">
+        buy
+        <span class="cost">${fmt(c)} bread</span>
+      </button>
+    `;
+    list.appendChild(card);
+  });
+
+  // render achievements
+  renderAchievements();
+}
+
+function renderAchievements() {
+  const list = document.getElementById('achList');
+  list.innerHTML = '';
+  achievements.forEach(a => {
+    const unlocked = state.achievements[a.id];
+    const div = document.createElement('div');
+    div.className = 'ach' + (unlocked ? ' unlocked' : '');
+    div.innerHTML = `
+      <div class="ach-icon">${unlocked ? '🏆' : '🔒'}</div>
+      <div class="ach-info">
+        <div class="ach-name">${a.name}</div>
+        <div class="ach-desc">${a.desc}</div>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+// ── init ─────────────────────────────────────────────────────────────────────
+
+loadGame();
+document.getElementById('liquidateBtn').addEventListener('click', liquidate);
+updateUI();
+renderAchievements();
+
+// keyboard shortcut: space to liquidate
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' && e.target === document.body) {
+    e.preventDefault();
+    const btn = document.getElementById('liquidateBtn');
+    const rect = btn.getBoundingClientRect();
+    liquidate({ clientX: rect.left + rect.width/2, clientY: rect.top + rect.height/2 });
+  }
+});
+</script>
+</body>
+</html>
